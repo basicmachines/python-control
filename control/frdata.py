@@ -49,9 +49,10 @@ $Id: frd.py 185 2012-08-30 05:44:32Z murrayrm $
 """
 
 # External function declarations
+from warnings import warn
 import numpy as np
 from numpy import angle, array, empty, ones, \
-    real, imag, matrix, absolute, eye, linalg, where, dot
+    real, imag, absolute, eye, linalg, where, dot
 from scipy.interpolate import splprep, splev
 from .lti import LTI
 
@@ -79,6 +80,10 @@ class FRD(LTI):
     represent the inputs.
 
     """
+
+    # Allow NDarray * StateSpace to give StateSpace._rmul_() priority
+    # https://docs.scipy.org/doc/numpy/reference/arrays.classes.html
+    __array_priority__ = 11     # override ndarray and matrix types
 
     epsw = 1e-8
 
@@ -187,9 +192,10 @@ class FRD(LTI):
 
         if isinstance(other, FRD):
             # verify that the frequencies match
-            if (other.omega != self.omega).any():
-                print("Warning: frequency points do not match; expect"
-                      " truncation and interpolation")
+            if len(other.omega) != len(self.omega) or \
+               (other.omega != self.omega).any():
+                warn("Frequency points do not match; expect"
+                      " truncation and interpolation.")
 
         # Convert the second argument to a frequency response function.
         # or re-base the frd to the current omega (if needed)
@@ -340,8 +346,9 @@ second has %i." % (self.outputs, other.outputs))
         intermediate values.
 
         """
-        warn("FRD.evalfr(omega) will be deprecated in a future release of python-control; use sys.eval(omega) instead", 
-             PendingDeprecationWarning)
+        warn("FRD.evalfr(omega) will be deprecated in a future release "
+             "of python-control; use sys.eval(omega) instead", 
+             PendingDeprecationWarning)         # pragma: no coverage
         return self._evalfr(omega)
 
     # Define the `eval` function to evaluate an FRD at a given (real)
@@ -352,7 +359,7 @@ second has %i." % (self.outputs, other.outputs))
     def eval(self, omega):
         """Evaluate a transfer function at a single angular frequency.
 
-        self._evalfr(omega) returns the value of the frequency response
+        self.evalfr(omega) returns the value of the frequency response
         at frequency omega.
 
         Note that a "normal" FRD only returns values for which there is an
@@ -432,13 +439,16 @@ second has %i." % (self.outputs, other.outputs))
                       dtype=complex)
         # TODO: vectorize this
         # TODO: handle omega re-mapping
+        # TODO: is there a reason to use linalg.solve instead of linalg.inv?
+        # https://github.com/python-control/python-control/pull/314#discussion_r294075154
         for k, w in enumerate(other.omega):
-            fresp[:, :, k] = self.fresp[:, :, k].view(type=matrix)* \
+            fresp[:, :, k] = np.dot(
+                self.fresp[:, :, k],
                 linalg.solve(
-                eye(self.inputs) +
-                other.fresp[:, :, k].view(type=matrix) *
-                self.fresp[:, :, k].view(type=matrix),
-                eye(self.inputs))
+                    eye(self.inputs)
+                    + np.dot(other.fresp[:, :, k], self.fresp[:, :, k]),
+                    eye(self.inputs))
+            )
 
         return FRD(fresp, other.omega, smooth=(self.ifunc is not None))
 
@@ -462,7 +472,8 @@ def _convertToFRD(sys, omega, inputs=1, outputs=1):
 
     if isinstance(sys, FRD):
         omega.sort()
-        if (abs(omega - sys.omega) < FRD.epsw).all():
+        if len(omega) == len(sys.omega) and \
+           (abs(omega - sys.omega) < FRD.epsw).all():
             # frequencies match, and system was already frd; simply use
             return sys
 

@@ -4,12 +4,15 @@ import control
 import control.robust
 from control.exception import slycot_check
 
-
 class TestHinf(unittest.TestCase):
+    def setUp(self):
+        # Use array instead of matrix (and save old value to restore at end)
+        control.use_numpy_matrix(False)
+        
     @unittest.skipIf(not slycot_check(), "slycot not installed")
     def testHinfsyn(self):
         """Test hinfsyn"""
-        p = control.ss(-1, [1, 1], [[1], [1]], [[0, 1], [1, 0]])
+        p = control.ss(-1, [[1, 1]], [[1], [1]], [[0, 1], [1, 0]])
         k, cl, gam, rcond = control.robust.hinfsyn(p, 1, 1)
         # from Octave, which also uses SB10AD:
         #   a= -1; b1= 1; b2= 1; c1= 1; c2= 1; d11= 0; d12= 1; d21= 1; d22= 0;
@@ -26,12 +29,19 @@ class TestHinf(unittest.TestCase):
 
     # TODO: add more interesting examples
 
+    def tearDown(self):
+        control.config.reset_defaults()
+
 
 class TestH2(unittest.TestCase):
+    def setUp(self):
+        # Use array instead of matrix (and save old value to restore at end)
+        control.use_numpy_matrix(False)
+
     @unittest.skipIf(not slycot_check(), "slycot not installed")
     def testH2syn(self):
         """Test h2syn"""
-        p = control.ss(-1, [1, 1], [[1], [1]], [[0, 1], [1, 0]])
+        p = control.ss(-1, [[1, 1]], [[1], [1]], [[0, 1], [1, 0]])
         k = control.robust.h2syn(p, 1, 1)
         # from Octave, which also uses SB10HD for H-2 synthesis:
         #   a= -1; b1= 1; b2= 1; c1= 1; c2= 1; d11= 0; d12= 1; d21= 1; d22= 0;
@@ -43,9 +53,15 @@ class TestH2(unittest.TestCase):
         np.testing.assert_array_almost_equal(k.C, [[-1]])
         np.testing.assert_array_almost_equal(k.D, [[0]])
 
+    def tearDown(self):
+        control.config.reset_defaults()
+
 
 class TestAugw(unittest.TestCase):
     """Test control.robust.augw"""
+    def setUp(self):
+        # Use array instead of matrix (and save old value to restore at end)
+        control.use_numpy_matrix(False)
 
     # tolerance for system equality
     TOL = 1e-8
@@ -245,7 +261,7 @@ class TestAugw(unittest.TestCase):
     @unittest.skipIf(not slycot_check(), "slycot not installed")
     def testMimoW123(self):
         """MIMO plant with all weights"""
-        from control import augw, ss, append, minreal
+        from control import augw, ss, append
         g = ss([[-1., -2], [-3, -4]],
                [[1., 0.], [0., 1.]],
                [[1., 0.], [0., 1.]],
@@ -295,10 +311,10 @@ class TestAugw(unittest.TestCase):
         self.siso_almost_equal(w2[1, 1], p[3, 3])
         # u->z3 should be w3*g
         w3g = w3 * g;
-        self.siso_almost_equal(w3g[0, 0], minreal(p[4, 2]))
-        self.siso_almost_equal(w3g[0, 1], minreal(p[4, 3]))
-        self.siso_almost_equal(w3g[1, 0], minreal(p[5, 2]))
-        self.siso_almost_equal(w3g[1, 1], minreal(p[5, 3]))
+        self.siso_almost_equal(w3g[0, 0], p[4, 2])
+        self.siso_almost_equal(w3g[0, 1], p[4, 3])
+        self.siso_almost_equal(w3g[1, 0], p[5, 2])
+        self.siso_almost_equal(w3g[1, 1], p[5, 3])
         # u->v should be -g
         self.siso_almost_equal(-g[0, 0], p[6, 2])
         self.siso_almost_equal(-g[0, 1], p[6, 3])
@@ -318,10 +334,16 @@ class TestAugw(unittest.TestCase):
         self.assertRaises(ValueError, augw, g1by1, w2=g2by2)
         self.assertRaises(ValueError, augw, g1by1, w3=g2by2)
 
+    def tearDown(self):
+        control.config.reset_defaults()
+
 
 class TestMixsyn(unittest.TestCase):
     """Test control.robust.mixsyn"""
-
+    def setUp(self):
+        # Use array instead of matrix (and save old value to restore at end)
+        control.use_numpy_matrix(False)
+        
     # it's a relatively simple wrapper; compare results with augw, hinfsyn
     @unittest.skipIf(not slycot_check(), "slycot not installed")
     def testSiso(self):
@@ -363,6 +385,8 @@ class TestMixsyn(unittest.TestCase):
 
         np.testing.assert_allclose(rcond, info[1])
 
+    def tearDown(self):
+        control.config.reset_defaults()
 
 if __name__ == "__main__":
     unittest.main()

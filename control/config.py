@@ -7,12 +7,27 @@
 # files.  For now, you can just choose between MATLAB and FBS default
 # values.
 
+import warnings
+
 # Bode plot defaults
 bode_dB = False                 # Bode plot magnitude units
 bode_deg = True                 # Bode Plot phase units
 bode_Hz = False                 # Bode plot frequency units
 bode_number_of_samples = None   # Bode plot number of samples
 bode_feature_periphery_decade = 1.0  # Bode plot feature periphery in decades
+
+# State space module variables
+_use_numpy_matrix = True        # Decide whether to use numpy.marix
+
+def reset_defaults():
+    """Reset package configuration values to their default values."""
+    global bode_dB; bode_dB = False
+    global bode_deg; bode_deg = True
+    global bode_Hz; bode_Hz = False
+    global bode_number_of_samples; bode_number_of_samples = None
+    global bode_feature_periphery_decade; bode_feature_periphery_decade = 1.0
+    global _use_numpy_matrix; _use_numpy_matrix = True
+
 
 # Set defaults to match MATLAB
 def use_matlab_defaults():
@@ -26,6 +41,8 @@ def use_matlab_defaults():
     global bode_dB; bode_dB = True
     global bode_deg; bode_deg = True
     global bode_Hz; bode_Hz = True
+    global _use_numpy_matrix; _use_numpy_matrix = True
+
 
 # Set defaults to match FBS (Astrom and Murray)
 def use_fbs_defaults():
@@ -39,4 +56,28 @@ def use_fbs_defaults():
     # Bode plot defaults
     global bode_dB; bode_dB = False
     global bode_deg; bode_deg = True
-    global bode_Hz; bode_Hz = True
+    global bode_Hz; bode_Hz = False
+
+
+# Decide whether to use numpy.matrix for state space operations
+def use_numpy_matrix(flag=True, warn=True):
+    """Turn on/off use of Numpy `matrix` class for state space operations.
+
+    Parameters
+    ----------
+    flag : bool
+        If flag is `True` (default), use the Numpy (soon to be deprecated)
+        `matrix` class to represent matrices in the `~control.StateSpace`
+        class and functions.  If flat is `False`, then matrices are represnted
+        by a 2D `ndarray` object.
+
+    warn : bool
+        If flag is `True` (default), issue a warning when turning on the use
+        of the Numpy `matrix` class.  Set `warn` to false to omit display of
+        the warning message.
+
+    """
+    if flag and warn:
+        warnings.warn("Return type numpy.matrix is soon to be deprecated.",
+	              stacklevel=2)
+    global _use_numpy_matrix; _use_numpy_matrix = flag

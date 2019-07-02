@@ -61,6 +61,7 @@ Time domain simulation
     forced_response
     impulse_response
     initial_response
+    input_output_response
     step_response
     phase_plot
 
@@ -89,6 +90,7 @@ Control system analysis
     zero
     pzmap
     root_locus
+    sisotool
 
 Matrix computations
 ===================
@@ -127,6 +129,14 @@ Model simplification tools
     era
     markov
 
+Nonlinear system support
+========================
+.. autosummary::
+   :toctree: generated/
+
+   find_eqpt
+   linearize
+
 .. _utility-and-conversions:
 
 Utility functions and conversions
@@ -146,6 +156,7 @@ Utility functions and conversions
     observable_form
     pade
     reachable_form
+    reset_defaults
     sample_system
     ss2tf
     ssdata
@@ -156,3 +167,4 @@ Utility functions and conversions
     unwrap
     use_fbs_defaults
     use_matlab_defaults
+    use_numpy_matrix
