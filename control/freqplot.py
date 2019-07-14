@@ -537,7 +537,7 @@ def gangof4_plot(P, C, omega=None):
         if omega is None:
             omega = default_frequency_range((P, C))
 
-        # Compute the senstivity functions
+        # Compute the sensitivity functions
         L = P * C
         S = feedback(1, L)
         T = L * S

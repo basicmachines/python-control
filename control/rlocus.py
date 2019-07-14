@@ -51,7 +51,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from scipy import array, poly1d, row_stack, zeros_like, real, imag
 import scipy.signal             # signal processing toolbox
-import pylab                    # plotting routines
 from .xferfcn import _convert_to_transfer_function
 from .exception import ControlMIMONotImplemented
 from .sisotool import _SisotoolUpdate
@@ -63,7 +62,7 @@ __all__ = ['root_locus', 'rlocus']
 # Main function: compute a root locus diagram
 def root_locus(sys, kvect=None, xlim=None, ylim=None,
                plotstr='b' if int(matplotlib.__version__[0]) == 1 else 'C0',
-               Plot=True, PrintGain=True, grid=False, **kwargs):
+               Plot=True, ax=None, PrintGain=True, grid=False, **kwargs):
 
     """Root locus plot
 
@@ -83,6 +82,8 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
         Set limits of y axis, normally with tuple (see matplotlib.axes).
     Plot : boolean, optional
         If True (default), plot root locus diagram.
+    ax : matplotlib axis object
+        If not passed, uses gca() to get current axis.
     PrintGain : bool
         If True (default), report mouse clicks when close to the root locus
         branches, calculate gain, damping and print.
@@ -113,43 +114,46 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
 
     # Create the Plot
     if Plot:
-        if sisotool:
-            f = kwargs['fig']
-            ax = f.axes[1]
 
-        else:
-            figure_number = pylab.get_fignums()
-            figure_title = [
-                pylab.figure(numb).canvas.get_window_title()
-                for numb in figure_number]
-            new_figure_name = "Root Locus"
-            rloc_num = 1
-            while new_figure_name in figure_title:
-                new_figure_name = "Root Locus " + str(rloc_num)
-                rloc_num += 1
-            f = pylab.figure(new_figure_name)
-            ax = pylab.axes()
+        if ax is None and len(plt.get_fignums()) > 0:
+            # Get the current axis
+            ax = plt.gca()
+
+        # Propose to replace the behaviour below with:
+        ax.set_title("Root Locus")
+        # if not sisotool:
+        #     figure_number = pylab.get_fignums()
+        #     figure_title = [
+        #         pylab.figure(numb).canvas.get_window_title()
+        #         for numb in figure_number]
+        #     new_figure_name = "Root Locus"
+        #     rloc_num = 1
+        #     while new_figure_name in figure_title:
+        #         new_figure_name = "Root Locus " + str(rloc_num)
+        #         rloc_num += 1
+        #     fig = pylab.figure(new_figure_name)
+        #     ax = pylab.axes()
 
         if PrintGain and not sisotool:
-            f.canvas.mpl_connect(
+            ax.figure.canvas.mpl_connect(
                 'button_release_event',
-                partial(_RLClickDispatcher, sys=sys, fig=f,
-                        ax_rlocus=f.axes[0], plotstr=plotstr))
+                partial(_RLClickDispatcher, sys=sys, fig=ax.figure,
+                        ax_rlocus=ax, plotstr=plotstr))
 
         elif sisotool:
-            f.axes[1].plot(
+            ax.plot(
                 [root.real for root in start_mat],
                 [root.imag for root in start_mat],
                 'm.', marker='s', markersize=8, zorder=20, label='gain_point')
-            f.suptitle(
+            sm = start_mat[0][0]
+            fontsize = 12 if int(matplotlib.__version__[0]) == 1 else 10
+            ax.figure.suptitle(
                 "Clicked at: %10.4g%+10.4gj  gain: %10.4g  damp: %10.4g" %
-                (start_mat[0][0].real, start_mat[0][0].imag,
-                 1, -1 * start_mat[0][0].real / abs(start_mat[0][0])),
-                fontsize=12 if int(matplotlib.__version__[0]) == 1 else 10)
-            f.canvas.mpl_connect(
+                (sm.real, sm.imag, 1, -sm.real/abs(sm)), fontsize=fontsize)
+            ax.figure.canvas.mpl_connect(
                 'button_release_event',
-                partial(_RLClickDispatcher, sys=sys, fig=f,
-                        ax_rlocus=f.axes[1], plotstr=plotstr,
+                partial(_RLClickDispatcher, sys=sys, fig=ax.figure,
+                        ax_rlocus=ax, plotstr=plotstr,
                         sisotool=sisotool,
                         bode_plot_params=kwargs['bode_plot_params'],
                         tvect=kwargs['tvect']))
@@ -158,7 +162,7 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
         # is available, i.e., cannot combine with _RLClickDispatcher
         dpfun = partial(
             _RLZoomDispatcher, sys=sys, ax_rlocus=ax, plotstr=plotstr)
-        # TODO: the next too lines seem to take a long time to execute
+        # TODO: the next two lines seem to take a long time to execute
         # TODO: is there a way to speed them up?  (RMM, 6 Jun 2019)
         ax.callbacks.connect('xlim_changed', dpfun)
         ax.callbacks.connect('ylim_changed', dpfun)
@@ -185,7 +189,7 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
         ax.set_xlabel('Real')
         ax.set_ylabel('Imaginary')
         if grid and sisotool:
-            _sgrid_func(f)
+            _sgrid_func(ax)
         elif grid:
             _sgrid_func()
         else:
@@ -347,7 +351,7 @@ def _indexes_filt(mymat, tolerance, zoom_xlim=None, zoom_ylim=None):
 
 def _break_points(num, den):
     """Extract break points over real axis and gains given these locations"""
-    # type: (np.poly1d, np.poly1d) -> (np.array, np.array)
+    # Type: (np.poly1d, np.poly1d) -> (np.array, np.array)
     dnum = num.deriv(m=1)
     dden = den.deriv(m=1)
     polynom = den * dnum - num * dden
@@ -412,9 +416,9 @@ def _k_max(num, den, real_break_points, k_break_points):
 
 
 def _systopoly1d(sys):
-    """Extract numerator and denominator polynomails for a system"""
+    """Extract numerator and denominator polynomials for a system"""
     # Allow inputs from the signal processing toolbox
-    if (isinstance(sys, scipy.signal.lti)):
+    if isinstance(sys, scipy.signal.lti):
         nump = sys.num
         denp = sys.den
 
@@ -490,7 +494,7 @@ def _RLZoomDispatcher(event, sys, ax_rlocus, plotstr):
 
     kvect, mymat, xlim, ylim = _default_gains(
         nump, denp, xlim=None, ylim=None, zoom_xlim=xlim, zoom_ylim=ylim)
-    _removeLine('rootlocus', ax_rlocus)
+    _remove_line('rootlocus', ax_rlocus)
 
     for i, col in enumerate(mymat.T):
         ax_rlocus.plot(real(col), imag(col), plotstr, label='rootlocus',
@@ -538,6 +542,7 @@ def _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool=False):
         K = float('inf')
         K_xlim = float('inf')
         K_ylim = float('inf')
+        # TODO: Do we need to set s here?
 
     gain_tolerance += 0.1 * max([abs(K_ylim.imag/K_ylim.real),
                                  abs(K_xlim.imag/K_xlim.real)])
@@ -554,7 +559,7 @@ def _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool=False):
             fontsize=12 if int(matplotlib.__version__[0]) == 1 else 10)
 
         # Remove the previous line
-        _removeLine(label='gain_point', ax=ax_rlocus)
+        _remove_line(label='gain_point', ax=ax_rlocus)
 
         # Visualise clicked point, display all roots for sisotool mode
         if sisotool:
@@ -570,7 +575,7 @@ def _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool=False):
         return K.real[0][0]
 
 
-def _removeLine(label, ax):
+def _remove_line(label, ax):
     """Remove a line from the ax when a label is specified"""
     for line in reversed(ax.lines):
         if line.get_label() == label:
@@ -578,12 +583,10 @@ def _removeLine(label, ax):
             del line
 
 
-def _sgrid_func(fig=None, zeta=None, wn=None):
-    if fig is None:
-        fig = pylab.gcf()
-        ax = fig.gca()
-    else:
-        ax = fig.axes[1]
+def _sgrid_func(ax=None, zeta=None, wn=None):
+    if ax is None:
+        ax = plt.gca()
+
     xlocator = ax.get_xaxis().get_major_locator()
 
     ylim = ax.get_ylim()

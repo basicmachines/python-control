@@ -40,17 +40,16 @@
 #
 # $Id:pzmap.py 819 2009-05-29 21:28:07Z murray $
 
-from numpy import real, imag, linspace, exp, cos, sin, sqrt
-from math import pi
-from .lti import LTI, isdtime, isctime
+from numpy import real, imag
+from .lti import LTI, isdtime
 from .grid import sgrid, zgrid, nogrid
 
 __all__ = ['pzmap']
 
 # TODO: Implement more elegant cross-style axes. See:
-#    http://matplotlib.sourceforge.net/examples/axes_grid/demo_axisline_style.html
-#    http://matplotlib.sourceforge.net/examples/axes_grid/demo_curvelinear_grid.html
-def pzmap(sys, Plot=True, grid=False, title='Pole Zero Map'):
+#  http://matplotlib.sourceforge.net/examples/axes_grid/demo_axisline_style.html
+#  http://matplotlib.sourceforge.net/examples/axes_grid/demo_curvelinear_grid.html
+def pzmap(sys, Plot=True, ax=None, grid=False, title='Pole Zero Map'):
     """
     Plot a pole/zero map for a linear system.
 
@@ -58,9 +57,11 @@ def pzmap(sys, Plot=True, grid=False, title='Pole Zero Map'):
     ----------
     sys: LTI (StateSpace or TransferFunction)
         Linear system for which poles and zeros are computed.
-    Plot: bool
+    Plot: bool   TODO: Argument name should be lower-case
         If ``True`` a graph is generated with Matplotlib,
         otherwise the poles and zeros are only computed and returned.
+    ax : matplotlib axis object
+        If not passed, uses gca() to get current axis.
     grid: boolean (default = False)
         If True plot omega-damping grid.
 
@@ -77,26 +78,29 @@ def pzmap(sys, Plot=True, grid=False, title='Pole Zero Map'):
     poles = sys.pole()
     zeros = sys.zero()
 
-    if (Plot):
+    if Plot:
         import matplotlib.pyplot as plt
+
+        if ax is None and len(plt.get_fignums()) > 0:
+            # Get the current axis
+            ax = plt.gca()
 
         if grid:
             if isdtime(sys, strict=True):
-                ax, fig = zgrid()
+                ax = zgrid(ax=ax)
             else:
-                ax, fig = sgrid()
+                ax = sgrid(ax=ax)
         else:
-            ax, fig = nogrid()
+            ax = nogrid(ax=ax)
 
         # Plot the locations of the poles and zeros
         if len(poles) > 0:
             ax.scatter(real(poles), imag(poles), s=50, marker='x', facecolors='k')
         if len(zeros) > 0:
             ax.scatter(real(zeros), imag(zeros), s=50, marker='o',
-                        facecolors='none', edgecolors='k')
+                       facecolors='none', edgecolors='k')
 
-
-        plt.title(title)
+        ax.set_title(title)
 
     # Return locations of poles and zeros as a tuple
     return poles, zeros
