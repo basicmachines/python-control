@@ -53,7 +53,7 @@ from scipy import array, poly1d, row_stack, zeros_like, real, imag
 import scipy.signal             # signal processing toolbox
 from .xferfcn import _convert_to_transfer_function
 from .exception import ControlMIMONotImplemented
-from .sisotool import _SisotoolUpdate
+from .sisotool import _sisotool_update
 from functools import partial
 
 __all__ = ['root_locus', 'rlocus']
@@ -513,7 +513,7 @@ def _RLClickDispatcher(event, sys, fig, ax_rlocus, plotstr, sisotool=False,
         # if a point is clicked on the rootlocus plot visually emphasize it
         K = _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool)
         if sisotool and K is not None:
-            _SisotoolUpdate(sys, fig, K, bode_plot_params, tvect)
+            _sisotool_update(sys, fig, K, bode_plot_params, tvect)
 
     # Update the canvas
     fig.canvas.draw()
