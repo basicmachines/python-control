@@ -115,12 +115,13 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
     # Create the Plot
     if Plot:
 
-        if ax is None and len(plt.get_fignums()) > 0:
-            # Get the current axis
+        if ax is None:
+            # Get the current axis or create a new figure with one
             ax = plt.gca()
 
-        # Propose to replace the behaviour below with:
         ax.set_title("Root Locus")
+
+        # TODO: Propose to remove the title-setting behaviour below:
         # if not sisotool:
         #     figure_number = pylab.get_fignums()
         #     figure_title = [

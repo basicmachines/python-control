@@ -89,12 +89,15 @@ def sgrid(ax=None):
                                         tick_formatter1=tick_formatter1
                                         )
 
-    if ax is None and len(plt.get_fignums()) > 0:
-        # Get the current axis
+    # Get the current axis
+    #if ax is None and len(plt.get_fignums()) > 0:
+    #    ax = plt.gca()  TODO: Delete
+    if ax is None:
+        # Get the current axis or create a new figure with one
         ax = plt.gca()
     fig = ax.figure()
 
-    # TODO: Can we do this after calling plt.gca?
+    # TODO: Can we do this after calling plt.gca? Seems to work..
     ax = SubplotHost(fig, 1, 1, 1, grid_helper=grid_helper)
 
     # make tick labels of right invisible, and top axis visible.
@@ -189,8 +192,10 @@ def zgrid(ax=None, zetas=None, wns=None):
     """
 
     # Get the current axis
-    if ax is None and len(plt.get_fignums()) > 0:
-        ax = plt.gca()
+    #if ax is None and len(plt.get_fignums()) > 0:
+    #    ax = plt.gca()  TODO: Delete
+    # Get the current axis or create a new figure with one
+    ax = plt.gca()
 
     # Constant damping lines
     if zetas is None:
