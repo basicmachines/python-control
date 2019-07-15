@@ -15,10 +15,8 @@ class TestSisotool(unittest.TestCase):
         self.system = TransferFunction([1000], [1, 25, 100, 0])
 
     def test_sisotool(self):
-        sisotool(self.system, Hz=False)
-        fig = plt.gcf()
-        ax_mag, ax_rlocus, ax_phase, ax_step = \
-            fig.axes[0], fig.axes[1], fig.axes[2], fig.axes[3]
+        fig = sisotool(self.system, Hz=False)
+        ax_mag, ax_rlocus, ax_phase, ax_step = fig.axes
 
         # Check the initial root locus plot points
         initial_point_0 = (np.array([-22.53155977]), np.array([0.]))
@@ -48,7 +46,7 @@ class TestSisotool(unittest.TestCase):
             'margins': True
         }
 
-        # Move the rootlocus to another point
+        # Move the root locus to another point
         event = type('test', (object,), {'xdata': 2.31206868287, 'ydata': 15.5983051046,
                                          'inaxes': ax_rlocus.axes})()
         _RLClickDispatcher(event=event, sys=self.system, fig=fig,

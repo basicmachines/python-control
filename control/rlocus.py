@@ -66,7 +66,7 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
 
     """Root locus plot
 
-    Calculate the root locus by finding the roots of 1+k*TF(s)
+    Calculates the root locus by finding the roots of 1 + k*TF(s)
     where TF is self.num(s)/self.den(s) and each k is an element
     of kvect.
 

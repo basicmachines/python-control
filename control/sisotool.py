@@ -14,11 +14,11 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
              deg=None, omega_limits=None, omega_num=None,
              margins_bode=True, tvect=None):
     """
-    Sisotool style collection of plots inspired by MATLAB's sisotool.
+    Displays a figure with four plots similar to MATLAB's sisotool.
     The left two plots contain the bode magnitude and phase diagrams.
-    The top right plot is a clickable root locus plot, clicking on the
-    root locus will change the gain of the system. The bottom left plot
-    shows a closed loop time response.
+    The top-right plot is a clickable root locus plot. Clicking on the
+    root locus will change the gain of the system. The bottom-right plot
+    shows a closed-loop time response.
 
     Parameters
     ----------
@@ -52,6 +52,10 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
     tvect : list or ndarray, optional
         List of timesteps to use for closed loop step response
 
+    Returns
+    -------
+    fig : matplotlib figure
+
     Examples
     --------
     >>> sys = tf([1000], [1,25,100,0])
@@ -65,10 +69,10 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
 
     # Setup sisotool figure or superimpose if one is already present
     fig = plt.gcf()
-    if fig.canvas.get_window_title() != 'Sisotool':
-        plt.close(fig)
-        fig, axes = plt.subplots(2, 2)
-        fig.canvas.set_window_title('Sisotool')
+    #if fig.canvas.get_window_title() != 'Sisotool':
+    plt.close(fig)
+    fig, axes = plt.subplots(2, 2)
+    fig.canvas.set_window_title('Sisotool')
 
     # Extract bode plot parameters
     bode_plot_params = {
@@ -89,7 +93,9 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
     # Setup the root-locus plot window
     root_locus(sys, kvect=kvect, xlim=xlim_rlocus, ylim=ylim_rlocus, plotstr=plotstr_rlocus,
                grid=rlocus_grid, fig=fig, bode_plot_params=bode_plot_params, tvect=tvect,
-               sisotool=True)
+               sisotool=True, ax=axes[0, 1])
+
+    return fig
 
 
 def _sisotool_update(sys, fig, K, bode_plot_params, tvect=None):
@@ -101,8 +107,8 @@ def _sisotool_update(sys, fig, K, bode_plot_params, tvect=None):
         title_font_size = 10
         label_font_size = 8
 
-    # Get the subaxes and clear them
-    ax_mag, ax_rlocus, ax_phase, ax_step = fig.axes[0:4]
+    # Get the subplot axes and clear them
+    ax_mag, ax_rlocus, ax_phase, ax_step = fig.axes
 
     # Catch matplotlib 2.1.x and higher user warnings when clearing a log axis
     with warnings.catch_warnings():
