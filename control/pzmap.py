@@ -46,6 +46,7 @@ from .grid import sgrid, zgrid, nogrid
 
 __all__ = ['pzmap']
 
+
 # TODO: Implement more elegant cross-style axes. See:
 #  http://matplotlib.sourceforge.net/examples/axes_grid/demo_axisline_style.html
 #  http://matplotlib.sourceforge.net/examples/axes_grid/demo_curvelinear_grid.html
@@ -81,8 +82,8 @@ def pzmap(sys, Plot=True, ax=None, grid=False, title='Pole Zero Map'):
     if Plot:
         import matplotlib.pyplot as plt
 
-        if ax is None and len(plt.get_fignums()) > 0:
-            # Get the current axis
+        if ax is None:
+            # Get the current axis or create a new figure with one
             ax = plt.gca()
 
         if grid:
