@@ -62,7 +62,7 @@ __all__ = ['root_locus', 'rlocus']
 # Main function: compute a root locus diagram
 def root_locus(sys, kvect=None, xlim=None, ylim=None,
                plotstr='b' if int(matplotlib.__version__[0]) == 1 else 'C0',
-               Plot=True, ax=None, PrintGain=True, grid=False, **kwargs):
+               plot=True, ax=None, print_gain=True, grid=False, **kwargs):
 
     """Root locus plot
 
@@ -80,11 +80,13 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
         Set limits of x axis, normally with tuple (see matplotlib.axes).
     ylim : tuple or list, optional
         Set limits of y axis, normally with tuple (see matplotlib.axes).
-    Plot : boolean, optional
+    plotstr : str
+        Format string, e.g. 'b-' for blue line.
+    plot : boolean, optional
         If True (default), plot root locus diagram.
     ax : matplotlib axis object
         If not passed, uses gca() to get current axis.
-    PrintGain : bool
+    print_gain : bool
         If True (default), report mouse clicks when close to the root locus
         branches, calculate gain, damping and print.
     grid : bool
@@ -99,7 +101,7 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
     """
 
     # Convert numerator and denominator to polynomials if they aren't
-    (nump, denp) = _systopoly1d(sys)
+    nump, denp = _systopoly1d(sys)
 
     if kvect is None:
         start_mat = _RLFindRoots(nump, denp, [1])
@@ -113,7 +115,7 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
     sisotool = False if 'sisotool' not in kwargs else True
 
     # Create the Plot
-    if Plot:
+    if plot:
 
         if ax is None:
             # Get the current axis or create a new figure with one
@@ -135,7 +137,7 @@ def root_locus(sys, kvect=None, xlim=None, ylim=None,
         #     fig = pylab.figure(new_figure_name)
         #     ax = pylab.axes()
 
-        if PrintGain and not sisotool:
+        if print_gain and not sisotool:
             ax.figure.canvas.mpl_connect(
                 'button_release_event',
                 partial(_RLClickDispatcher, sys=sys, fig=ax.figure,
@@ -428,7 +430,7 @@ def _systopoly1d(sys):
         sys = _convert_to_transfer_function(sys)
 
         # Make sure we have a SISO system
-        if (sys.inputs > 1 or sys.outputs > 1):
+        if sys.inputs > 1 or sys.outputs > 1:
             raise ControlMIMONotImplemented()
 
         # Start by extracting the numerator and denominator from system object
@@ -436,13 +438,13 @@ def _systopoly1d(sys):
         denp = sys.den[0][0]
 
     # Check to see if num, den are already polynomials; otherwise convert
-    if (not isinstance(nump, poly1d)):
+    if not isinstance(nump, poly1d):
         nump = poly1d(nump)
 
-    if (not isinstance(denp, poly1d)):
+    if not isinstance(denp, poly1d):
         denp = poly1d(denp)
 
-    return (nump, denp)
+    return nump, denp
 
 
 def _RLFindRoots(nump, denp, kvect):
@@ -469,22 +471,22 @@ def _RLSortRoots(mymat):
     locus doesn't show weird pseudo-branches as roots jump from
     one branch to another."""
 
-    sorted = zeros_like(mymat)
+    sorted_roots = zeros_like(mymat)
     for n, row in enumerate(mymat):
         if n == 0:
-            sorted[n, :] = row
+            sorted_roots[n, :] = row
         else:
             # sort the current row by finding the element with the
             # smallest absolute distance to each root in the
             # previous row
             available = list(range(len(prevrow)))
             for elem in row:
-                evect = elem-prevrow[available]
+                evect = elem - prevrow[available]
                 ind1 = abs(evect).argmin()
                 ind = available.pop(ind1)
-                sorted[n, ind] = elem
-        prevrow = sorted[n, :]
-    return sorted
+                sorted_roots[n, ind] = elem
+        prevrow = sorted_roots[n, :]
+    return sorted_roots
 
 
 def _RLZoomDispatcher(event, sys, ax_rlocus, plotstr):
@@ -512,9 +514,9 @@ def _RLClickDispatcher(event, sys, fig, ax_rlocus, plotstr, sisotool=False,
        {'zoom rect', 'pan/zoom'}:
 
         # if a point is clicked on the rootlocus plot visually emphasize it
-        K = _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool)
-        if sisotool and K is not None:
-            _sisotool_update(sys, fig, K, bode_plot_params, tvect)
+        k = _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool)
+        if sisotool and k is not None:
+            _sisotool_update(sys, fig, k, bode_plot_params, tvect)
 
     # Update the canvas
     fig.canvas.draw()
@@ -522,7 +524,7 @@ def _RLClickDispatcher(event, sys, fig, ax_rlocus, plotstr, sisotool=False,
 
 def _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool=False):
     """Display root-locus gain feedback point for clicks on root-locus plot"""
-    (nump, denp) = _systopoly1d(sys)
+    nump, denp = _systopoly1d(sys)
 
     xlim = ax_rlocus.get_xlim()
     ylim = ax_rlocus.get_ylim()
@@ -533,38 +535,38 @@ def _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool=False):
     # Catch type error when event click is in the figure but not in an axis
     try:
         s = complex(event.xdata, event.ydata)
-        K = -1. / sys.horner(s)
-        K_xlim = -1. / sys.horner(
+        k = -1. / sys.horner(s)
+        k_xlim = -1. / sys.horner(
             complex(event.xdata + 0.05 * abs(xlim[1] - xlim[0]), event.ydata))
-        K_ylim = -1. / sys.horner(
+        k_ylim = -1. / sys.horner(
             complex(event.xdata, event.ydata + 0.05 * abs(ylim[1] - ylim[0])))
 
     except TypeError:
-        K = float('inf')
-        K_xlim = float('inf')
-        K_ylim = float('inf')
+        k = float('inf')
+        k_xlim = float('inf')
+        k_ylim = float('inf')
         # TODO: Do we need to set s here?
 
-    gain_tolerance += 0.1 * max([abs(K_ylim.imag/K_ylim.real),
-                                 abs(K_xlim.imag/K_xlim.real)])
+    gain_tolerance += 0.1 * max([abs(k_ylim.imag/k_ylim.real),
+                                 abs(k_xlim.imag/k_xlim.real)])
 
-    if abs(K.real) > 1e-8 and abs(K.imag / K.real) < gain_tolerance and \
-       event.inaxes == ax_rlocus.axes and K.real > 0.:
+    if abs(k.real) > 1e-8 and abs(k.imag / k.real) < gain_tolerance and \
+       event.inaxes == ax_rlocus.axes and k.real > 0.:
 
         # Display the parameters in the output window and figure
         print("Clicked at %10.4g%+10.4gj gain %10.4g damp %10.4g" %
-              (s.real, s.imag, K.real, -1 * s.real / abs(s)))
+              (s.real, s.imag, k.real, -1 * s.real / abs(s)))
+        fontsize = 12 if int(matplotlib.__version__[0]) == 1 else 10
         fig.suptitle(
             "Clicked at: %10.4g%+10.4gj  gain: %10.4g  damp: %10.4g" %
-            (s.real, s.imag, K.real, -1 * s.real / abs(s)),
-            fontsize=12 if int(matplotlib.__version__[0]) == 1 else 10)
+            (s.real, s.imag, k.real, -1 * s.real / abs(s)), fontsize)
 
         # Remove the previous line
         _remove_line(label='gain_point', ax=ax_rlocus)
 
         # Visualise clicked point, display all roots for sisotool mode
         if sisotool:
-            mymat = _RLFindRoots(nump, denp, K.real)
+            mymat = _RLFindRoots(nump, denp, k.real)
             ax_rlocus.plot(
                 [root.real for root in mymat],
                 [root.imag for root in mymat],
@@ -573,7 +575,7 @@ def _RLFeedbackClicksPoint(event, sys, fig, ax_rlocus, sisotool=False):
             ax_rlocus.plot(s.real, s.imag, 'k.', marker='s', markersize=8,
                            zorder=20, label='gain_point')
 
-        return K.real[0][0]
+        return k.real[0][0]
 
 
 def _remove_line(label, ax):
