@@ -1,7 +1,7 @@
 import numpy as np
 from numpy import cos, sin, sqrt, linspace, pi, exp
 import matplotlib.pyplot as plt
-from mpl_toolkits.axisartist import SubplotHost
+from mpl_toolkits.axisartist import SubplotHost, axislines
 from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from matplotlib.projections import PolarAxes
@@ -48,19 +48,30 @@ class ModifiedExtremeFinderCycle(angle_helper.ExtremeFinderCycle):
 def sgrid(ax=None):
     """
     Adds an s-plane grid of constant damping factors and natural
-    frequencies to a plot.  If ax is not specified, the current
-    figure axis is used.
+    frequencies to a plot. If ax is not specified, the current
+    figure axis is used. However, note that the returned axis
+    may not be the same instance as the axis passed. The original
+    axis may have to be deleted to create the s-plane axis.
+    Always use the new axis instance returned by this method if
+    you need to reference the axis created.
 
     Parameters
     ----------
-    ax : matplotlib axis object
+    ax : matplotlib axis
         If not passed, uses gca() to get current axis.
 
     Returns
     -------
     ax : matplotlib axis
+
+    Example
+    -------
+    >>> H = tf([2, 5, 1], [1, 2, 3])
+    >>> r, k = rlocus(H)
+    >>> ax = sgrid()
+    >>> plt.show()
     """
-    # From matplotlib demos:
+    # Based on these matplotlib demos:
     # https://matplotlib.org/gallery/axisartist/demo_curvelinear_grid.html
     # https://matplotlib.org/gallery/axisartist/demo_floating_axis.html
 
@@ -78,55 +89,58 @@ def sgrid(ax=None):
                                                 lon_cycle=360,
                                                 lat_cycle=None,
                                                 lon_minmax=(90, 270),
-                                                lat_minmax=(0, np.inf),)
-
+                                                lat_minmax=(0, np.inf))
     grid_locator1 = angle_helper.LocatorDMS(15)
     tick_formatter1 = FormatterDMS()
-
     grid_helper = GridHelperCurveLinear(tr,
                                         extreme_finder=extreme_finder,
                                         grid_locator1=grid_locator1,
                                         tick_formatter1=tick_formatter1
                                         )
 
-    # Get the current axis
-    #if ax is None and len(plt.get_fignums()) > 0:
-    #    ax = plt.gca()  TODO: Delete
     if ax is None:
         # Get the current axis or create a new figure with one
         ax = plt.gca()
-    fig = ax.figure()
+    fig = ax.figure
 
-    # TODO: Can we do this after calling plt.gca? Seems to work..
-    ax = SubplotHost(fig, 1, 1, 1, grid_helper=grid_helper)
+    # If the axis is not from mpl_toolkits.axisartist, replace it
+    # with a new axis
+    if not isinstance(ax, axislines.Axes):
+        subargs = ax.get_geometry()
+        fig.delaxes(ax)
+        del ax
+        ax2 = SubplotHost(fig, *subargs, grid_helper=grid_helper)
+        fig.add_subplot(ax2)
+    else:
+       ax2 = ax
 
     # make tick labels of right invisible, and top axis visible.
     visible = True
-    ax.axis[:].major_ticklabels.set_visible(visible)
-    ax.axis[:].major_ticks.set_visible(False)
-    ax.axis[:].invert_ticklabel_direction()
+    ax2.axis[:].major_ticklabels.set_visible(visible)
+    ax2.axis[:].major_ticks.set_visible(False)
+    ax2.axis[:].invert_ticklabel_direction()
 
-    ax.axis["wnxneg"] = axis = ax.new_floating_axis(0, 180)
+    ax2.axis["wnxneg"] = axis = ax2.new_floating_axis(0, 180)
     axis.set_ticklabel_direction("-")
     axis.label.set_visible(False)
-    ax.axis["wnxpos"] = axis = ax.new_floating_axis(0, 0)
+    ax2.axis["wnxpos"] = axis = ax2.new_floating_axis(0, 0)
     axis.label.set_visible(False)
-    ax.axis["wnypos"] = axis = ax.new_floating_axis(0, 90)
+    ax2.axis["wnypos"] = axis = ax2.new_floating_axis(0, 90)
     axis.label.set_visible(False)
     axis.set_axis_direction("left")
-    ax.axis["wnyneg"] = axis = ax.new_floating_axis(0, 270)
+    ax2.axis["wnyneg"] = axis = ax2.new_floating_axis(0, 270)
     axis.label.set_visible(False)
     axis.set_axis_direction("left")
     axis.invert_ticklabel_direction()
     axis.set_ticklabel_direction("-")
 
     # let left axis shows ticklabels for 1st coordinate (angle)
-    ax.axis["left"].get_helper().nth_coord_ticks = 0
-    ax.axis["right"].get_helper().nth_coord_ticks = 0
-    ax.axis["left"].get_helper().nth_coord_ticks = 0
-    ax.axis["bottom"].get_helper().nth_coord_ticks = 0
+    ax2.axis["left"].get_helper().nth_coord_ticks = 0
+    ax2.axis["right"].get_helper().nth_coord_ticks = 0
+    ax2.axis["left"].get_helper().nth_coord_ticks = 0
+    ax2.axis["bottom"].get_helper().nth_coord_ticks = 0
 
-    # TODO: Did I comment this out or not?
+    # TODO: Not sure how to add this axis
     #fig.add_subplot(ax)
 
     # RECTANGULAR X Y AXES WITH SCALE
@@ -142,10 +156,9 @@ def sgrid(ax=None):
     #                                     offset=(0, 0))
     # FINISH RECTANGULAR
 
-    ax.grid(True, zorder=0, linestyle='dotted')
-
-    _final_setup(ax)
-    return ax
+    ax2.grid(True, zorder=0, linestyle='dotted')
+    _final_setup(ax2)
+    return ax2
 
 
 def _final_setup(ax):
@@ -157,8 +170,8 @@ def _final_setup(ax):
 
 
 def nogrid(ax=None):
-    # Get the current axis
-    if ax is None and len(plt.get_fignums()) > 0:
+    if ax is None:
+        # Get the current axis or create a new figure with one
         ax = plt.gca()
 
     _final_setup(ax)
@@ -172,7 +185,7 @@ def zgrid(ax=None, zetas=None, wns=None):
 
     Parameters
     ----------
-    ax : matplotlib axis object
+    ax : matplotlib axis
         If not passed, uses gca() to get current axis.
     zetas : list or 1-d array
         Damping factors.
@@ -185,17 +198,15 @@ def zgrid(ax=None, zetas=None, wns=None):
 
     Example
     -------
-    >>> H = tf([2 -3.4 1.5],[1 -1.6 0.8],-1)
-    >>> rlocus(H)
+    >>> H = tf([2, -3.4, 1.5], [1, -1.6, 0.8], -1)
+    >>> r, k = rlocus(H)
     >>> zgrid()
     >>> plt.show()
     """
 
-    # Get the current axis
-    #if ax is None and len(plt.get_fignums()) > 0:
-    #    ax = plt.gca()  TODO: Delete
-    # Get the current axis or create a new figure with one
-    ax = plt.gca()
+    if ax is None:
+        # Get the current axis or create a new figure with one
+        ax = plt.gca()
 
     # Constant damping lines
     if zetas is None:
@@ -238,7 +249,7 @@ def zgrid(ax=None, zetas=None, wns=None):
         an_x = xret[an_i]
         an_y = yret[an_i]
         num = '{:1.1f}'.format(a)
-        ax.annotate("$\\frac{" + num + "\pi}{T}$", xy=(an_x, an_y),
+        ax.annotate("$\\frac{" + num + "\\pi}{T}$", xy=(an_x, an_y),
                     xytext=(an_x, an_y), size=9)
 
     _final_setup(ax)
