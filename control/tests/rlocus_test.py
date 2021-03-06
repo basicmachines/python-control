@@ -22,7 +22,7 @@ class TestRootLocus(unittest.TestCase):
         # Two random SISO systems.
         sys1 = TransferFunction([1, 2], [1, 2, 3])
         sys2 = StateSpace([[1., 4.], [3., 2.]], [[1.], [-4.]],
-            [[1., 0.]], [[0.]])
+                          [[1., 0.]], [[0.]])
         self.systems = (sys1, sys2)
 
     def check_cl_poles(self, sys, pole_list, k_list):
@@ -35,14 +35,14 @@ class TestRootLocus(unittest.TestCase):
         """Basic root locus plot"""
         klist = [-1, 0, 1]
         for sys in self.systems:
-            roots, k_out = root_locus(sys, klist, Plot=False)
+            roots, k_out = root_locus(sys, klist, plot=False)
             np.testing.assert_equal(len(roots), len(klist))
             np.testing.assert_array_equal(klist, k_out)
             self.check_cl_poles(sys, roots, klist)
 
     def test_without_gains(self):
         for sys in self.systems:
-            roots, kvect = root_locus(sys, Plot=False)
+            roots, kvect = root_locus(sys, plot=False)
             self.check_cl_poles(sys, roots, kvect)
 
     def test_root_locus_zoom(self):
@@ -62,14 +62,16 @@ class TestRootLocus(unittest.TestCase):
         zoom_y = ax_rlocus.lines[-2].get_data()[1][0:5]
         zoom_y = [abs(y) for y in zoom_y]
 
-        zoom_x_valid = [-5. ,- 4.61281263, - 4.16689986, - 4.04122642, - 3.90736502]
-        zoom_y_valid = [0. ,0., 0., 0., 0.]
+        zoom_x_valid = [-5., - 4.61281263, - 4.16689986, - 4.04122642, - 3.90736502]
+        zoom_y_valid = [0., 0., 0., 0., 0.]
 
-        assert_array_almost_equal(zoom_x,zoom_x_valid)
-        assert_array_almost_equal(zoom_y,zoom_y_valid)
+        assert_array_almost_equal(zoom_x, zoom_x_valid)
+        assert_array_almost_equal(zoom_y, zoom_y_valid)
+
 
 def test_suite():
     return unittest.TestLoader().loadTestsFromTestCase(TestRootLocus)
+
 
 if __name__ == "__main__":
     unittest.main()
