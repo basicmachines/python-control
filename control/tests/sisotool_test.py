@@ -4,7 +4,6 @@ from control.sisotool import sisotool
 from control.tests.margin_test import assert_array_almost_equal
 from control.rlocus import _RLClickDispatcher
 from control.xferfcn import TransferFunction
-import matplotlib.pyplot as plt
 
 
 class TestSisotool(unittest.TestCase):

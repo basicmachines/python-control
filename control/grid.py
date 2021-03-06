@@ -108,11 +108,13 @@ def sgrid(ax=None):
     if not isinstance(ax, axislines.Axes):
         subargs = ax.get_geometry()
         fig.delaxes(ax)
-        del ax
+        # TODO: The caller of sgrid() still references ax which is no
+        #       longer part of the figure. Is there a more sophisticated
+        #       way to replace the axes reference?
         ax2 = SubplotHost(fig, *subargs, grid_helper=grid_helper)
         fig.add_subplot(ax2)
     else:
-       ax2 = ax
+        ax2 = ax
 
     # make tick labels of right invisible, and top axis visible.
     visible = True

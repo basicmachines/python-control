@@ -72,6 +72,13 @@ def pzmap(sys, Plot=True, ax=None, grid=False, title='Pole Zero Map'):
         The systems poles
     zeros: array
         The system's zeros.
+
+    Example
+    -------
+    >>> H = tf([2, 5, 1], [1, 3, 5])
+    >>> p, z = pzmap(H)
+    >>> plt.grid()
+    >>> plt.show()
     """
     if not isinstance(sys, LTI):
         raise TypeError('Argument ``sys``: must be a linear system.')
