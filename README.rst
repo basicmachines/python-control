@@ -99,10 +99,16 @@ You can check out the latest version of the source code with the command::
 Testing
 -------
 
-You can run a set of unit tests to make sure that everything is working
-correctly.  After installation, run::
+You can run the unit tests with `pytest`_ to make sure that everything is
+working correctly.  Inside the source directory, run::
 
-  python setup.py test
+  pytest -v
+
+or to test the installed package::
+
+  pytest --pyargs control -v
+
+.. _pytest: https://docs.pytest.org/
 
 License
 -------
@@ -124,4 +130,8 @@ Your contributions are welcome!  Simply fork the GitHub repository and send a
 `pull request`_.
 
 .. _pull request: https://github.com/python-control/python-control/pulls
+
+Please see the `Developer's Wiki`_ for detailed instructions.
+
+.. _Developer's Wiki: https://github.com/python-control/python-control/wiki
 

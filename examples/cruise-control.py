@@ -149,17 +149,15 @@ control_tf = ct.tf2io(
 # Inputs: vref, gear, theta
 # Outputs: v (vehicle velocity)
 cruise_tf = ct.InterconnectedSystem(
-    (control_tf, vehicle),
+    (control_tf, vehicle), 
     name='cruise',
-    connections=(
-        ('control.u', '-vehicle.v'),
-        ('vehicle.u', 'control.y')
-    ),
-    inplist=('control.u', 'vehicle.gear', 'vehicle.theta'),
-    inputs=('vref', 'gear', 'theta'),
-    outlist=('vehicle.v', 'vehicle.u'),
-    outputs=('v', 'u')
-)
+    connections = (
+        ['control.u', '-vehicle.v'],
+        ['vehicle.u', 'control.y']),
+    inplist = ('control.u', 'vehicle.gear', 'vehicle.theta'),
+    inputs = ('vref', 'gear', 'theta'),
+    outlist = ('vehicle.v', 'vehicle.u'),
+    outputs = ('v', 'u'))
 
 # Define the time and input vectors
 T = np.linspace(0, 25, 101)
@@ -299,8 +297,8 @@ control_pi = ct.NonlinearIOSystem(
 cruise_pi = ct.InterconnectedSystem(
     (vehicle, control_pi), name='cruise',
     connections=(
-        ('vehicle.u', 'control.u'),
-        ('control.v', 'vehicle.v')),
+        ['vehicle.u', 'control.u'],
+        ['control.v', 'vehicle.v']),
     inplist=('control.vref', 'vehicle.gear', 'vehicle.theta'),
     outlist=('control.u', 'vehicle.v'), outputs=['u', 'v'])
 
@@ -437,9 +435,9 @@ control_sf = ct.NonlinearIOSystem(
 cruise_sf = ct.InterconnectedSystem(
     (vehicle, control_sf), name='cruise',
     connections=(
-        ('vehicle.u', 'control.u'),
-        ('control.x', 'vehicle.v'),
-        ('control.y', 'vehicle.v')),
+        ['vehicle.u', 'control.u'],
+        ['control.x', 'vehicle.v'],
+        ['control.y', 'vehicle.v']),
     inplist=('control.r', 'vehicle.gear', 'vehicle.theta'),
     outlist=('control.u', 'vehicle.v'), outputs=['u', 'v'])
 

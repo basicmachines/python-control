@@ -48,6 +48,7 @@ for analyzing and designing feedback control systems.
 # Note: the functions we use are specified as __all__ variables in the modules
 from .bdalg import *
 from .delay import *
+from .descfcn import *
 from .dtime import *
 from .freqplot import *
 from .lti import *
@@ -79,8 +80,5 @@ try:
 except ImportError:
     __version__ = "dev"
 
-# The following is to use Numpy's testing framework
-# Tests go under directory tests/, benchmarks under directory benchmarks/
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+# Initialize default parameter values
+reset_defaults()

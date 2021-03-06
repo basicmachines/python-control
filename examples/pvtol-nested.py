@@ -26,10 +26,6 @@ c = 0.05            # damping factor (estimated)
 Pi = tf([r], [J, 0, 0])  # inner loop (roll)
 Po = tf([1], [m, c, 0])  # outer loop (position)
 
-# Use state space versions
-Pi = tf2ss(Pi)
-Po = tf2ss(Po)
-
 #
 # Inner loop control design
 #
@@ -137,17 +133,15 @@ plt.ylabel('Phase [deg]')
 plt.figure(7)
 plt.clf()
 nyquist(L, (0.0001, 1000))
-plt.axis([-700, 5300, -3000, 3000])
 
 # Add a box in the region we are going to expand
-plt.plot([-400, -400, 200, 200, -400], [-100, 100, 100, -100, -100], 'r-')
+plt.plot([-2, -2, 1, 1, -2], [-4, 4, 4, -4, -4], 'r-')
 
 # Expanded region  
 plt.figure(8)
 plt.clf()
-plt.subplot(231)
 nyquist(L)
-plt.axis([-10, 5, -20, 20])
+plt.axis([-2, 1, -4, 4])
 
 # set up the color
 color = 'b'
@@ -170,7 +164,7 @@ plt.plot(Tvec.T, Yvec.T)
 
 plt.figure(10)
 plt.clf()
-P, Z = pzmap(T, Plot=True)
+P, Z = pzmap(T, plot=True, grid=True)
 print("Closed loop poles and zeros: ", P, Z)
 
 # Gang of Four

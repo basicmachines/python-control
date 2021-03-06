@@ -32,6 +32,9 @@ System interconnections
     parallel
     series
 
+See also the :ref:`iosys-module` module, which can be used to create and
+interconnect nonlinear input/output systems.
+
 Frequency domain plotting
 =========================
 
@@ -39,9 +42,11 @@ Frequency domain plotting
    :toctree: generated/
 
     bode_plot
+    describing_function_plot
     nyquist_plot
     gangof4_plot
     nichols_plot
+    nichols_grid
 
 Note: For plotting commands that create multiple axes on the same plot, the
 individual axes can be retrieved using the axes label (retrieved using the
@@ -81,6 +86,7 @@ Control system analysis
    :toctree: generated/
 
     dcgain
+    describing_function
     evalfr
     freqresp
     margin
@@ -114,6 +120,7 @@ Control system synthesis
     h2syn
     hinfsyn
     lqr
+    lqe
     mixsyn
     place
 
@@ -134,8 +141,15 @@ Nonlinear system support
 .. autosummary::
    :toctree: generated/
 
-   find_eqpt
-   linearize
+    describing_function
+    find_eqpt
+    interconnect
+    linearize
+    input_output_response
+    ss2io
+    summing_junction
+    tf2io
+    flatsys.point_to_point
 
 .. _utility-and-conversions:
 
@@ -145,6 +159,7 @@ Utility functions and conversions
    :toctree: generated/
 
     augw
+    bdschur
     canonical_form
     damp
     db2mag
@@ -153,6 +168,7 @@ Utility functions and conversions
     issiso
     issys
     mag2db
+    modal_form
     observable_form
     pade
     reachable_form

@@ -1,46 +1,66 @@
 import numpy as np
 from numpy import cos, sin, sqrt, linspace, pi, exp
 import matplotlib.pyplot as plt
-from mpl_toolkits.axisartist import SubplotHost, axislines
-from mpl_toolkits.axisartist.grid_helper_curvelinear import GridHelperCurveLinear
+from mpl_toolkits.axisartist import SubplotHost
+from mpl_toolkits.axisartist.grid_helper_curvelinear \
+    import GridHelperCurveLinear
 import mpl_toolkits.axisartist.angle_helper as angle_helper
 from matplotlib.projections import PolarAxes
 from matplotlib.transforms import Affine2D
 
 
 class FormatterDMS(object):
-    """Transforms angle ticks to damping ratios"""
-
+    '''Transforms angle ticks to damping ratios'''
     def __call__(self, direction, factor, values):
-        angles_deg = values/factor
-        damping_ratios = np.cos((180-angles_deg)*np.pi/180)
+        angles_deg = np.asarray(values)/factor
+        damping_ratios = np.cos((180-angles_deg) * np.pi/180)
         ret = ["%.2f" % val for val in damping_ratios]
         return ret
 
 
 class ModifiedExtremeFinderCycle(angle_helper.ExtremeFinderCycle):
-    """Changed to allow only left hand-side polar grid"""
+    '''Changed to allow only left hand-side polar grid
 
+    https://matplotlib.org/_modules/mpl_toolkits/axisartist/angle_helper.html#ExtremeFinderCycle.__call__
+    '''
     def __call__(self, transform_xy, x1, y1, x2, y2):
-        x_, y_ = np.linspace(x1, x2, self.nx), np.linspace(y1, y2, self.ny)
-        x, y = np.meshgrid(x_, y_)
+        x, y = np.meshgrid(
+            np.linspace(x1, x2, self.nx), np.linspace(y1, y2, self.ny))
         lon, lat = transform_xy(np.ravel(x), np.ravel(y))
 
         with np.errstate(invalid='ignore'):
             if self.lon_cycle is not None:
                 lon0 = np.nanmin(lon)
-                # Changed from 180 to 360 to be able to span only 90-270 (left hand side)
+                # Changed from 180 to 360 to be able to span only
+                # 90-270 (left hand side)
                 lon -= 360. * ((lon - lon0) > 360.)
-            if self.lat_cycle is not None:
+            if self.lat_cycle is not None:  # pragma: no cover
                 lat0 = np.nanmin(lat)
-                # Changed from 180 to 360 to be able to span only 90-270 (left hand side)
-                lat -= 360. * ((lat - lat0) > 360.)
+                lat -= 360. * ((lat - lat0) > 180.)
 
         lon_min, lon_max = np.nanmin(lon), np.nanmax(lon)
         lat_min, lat_max = np.nanmin(lat), np.nanmax(lat)
 
         lon_min, lon_max, lat_min, lat_max = \
-            self._adjust_extremes(lon_min, lon_max, lat_min, lat_max)
+            self._add_pad(lon_min, lon_max, lat_min, lat_max)
+
+        # check cycle
+        if self.lon_cycle:
+            lon_max = min(lon_max, lon_min + self.lon_cycle)
+        if self.lat_cycle:  # pragma: no cover
+            lat_max = min(lat_max, lat_min + self.lat_cycle)
+
+        if self.lon_minmax is not None:
+            min0 = self.lon_minmax[0]
+            lon_min = max(min0, lon_min)
+            max0 = self.lon_minmax[1]
+            lon_max = min(max0, lon_max)
+
+        if self.lat_minmax is not None:
+            min0 = self.lat_minmax[0]
+            lat_min = max(min0, lat_min)
+            max0 = self.lat_minmax[1]
+            lat_max = min(max0, lat_max)
 
         return lon_min, lon_max, lat_min, lat_max
 
@@ -84,23 +104,19 @@ def sgrid(ax=None):
 
     # 20, 20 : number of sampling points along x, y direction
     sampling_points = 20
-    extreme_finder = ModifiedExtremeFinderCycle(sampling_points,
-                                                sampling_points,
-                                                lon_cycle=360,
-                                                lat_cycle=None,
-                                                lon_minmax=(90, 270),
-                                                lat_minmax=(0, np.inf))
+    extreme_finder = ModifiedExtremeFinderCycle(
+        sampling_points, sampling_points, lon_cycle=360, lat_cycle=None,
+        lon_minmax=(90, 270), lat_minmax=(0, np.inf),)
+
     grid_locator1 = angle_helper.LocatorDMS(15)
     tick_formatter1 = FormatterDMS()
-    grid_helper = GridHelperCurveLinear(tr,
-                                        extreme_finder=extreme_finder,
-                                        grid_locator1=grid_locator1,
-                                        tick_formatter1=tick_formatter1
-                                        )
+    grid_helper = GridHelperCurveLinear(
+        tr, extreme_finder=extreme_finder, grid_locator1=grid_locator1,
+        tick_formatter1=tick_formatter1)
 
     if ax is None:
         # Get the current axis or create a new figure with one
-        ax = plt.gca()
+        ax = SubplotHost(fig, 1, 1, 1, grid_helper=grid_helper)
     fig = ax.figure
 
     # If the axis is not from mpl_toolkits.axisartist, replace it
@@ -146,21 +162,20 @@ def sgrid(ax=None):
     #fig.add_subplot(ax)
 
     # RECTANGULAR X Y AXES WITH SCALE
-    #par2 = ax.twiny()
-    #par2.axis["top"].toggle(all=False)
-    #par2.axis["right"].toggle(all=False)
-    #new_fixed_axis = par2.get_grid_helper().new_fixed_axis
-    #par2.axis["left"] = new_fixed_axis(loc="left",
+    # par2 = ax.twiny()
+    # par2.axis["top"].toggle(all=False)
+    # par2.axis["right"].toggle(all=False)
+    # new_fixed_axis = par2.get_grid_helper().new_fixed_axis
+    # par2.axis["left"] = new_fixed_axis(loc="left",
     #                                   axes=par2,
     #                                   offset=(0, 0))
-    #par2.axis["bottom"] = new_fixed_axis(loc="bottom",
+    # par2.axis["bottom"] = new_fixed_axis(loc="bottom",
     #                                     axes=par2,
     #                                     offset=(0, 0))
     # FINISH RECTANGULAR
 
-    ax2.grid(True, zorder=0, linestyle='dotted')
-    _final_setup(ax2)
-    return ax2
+    ax.grid(True, zorder=0, linestyle='dotted')
+    return ax
 
 
 def _final_setup(ax):
@@ -180,10 +195,9 @@ def nogrid(ax=None):
     return ax
 
 
-def zgrid(ax=None, zetas=None, wns=None):
-    """Adds a z-plane grid of constant damping factors and natural
-    frequencies to a plot. If ax is not specified, the current
-    figure axis is used.
+def zgrid(zetas=None, wns=None, ax=None):
+    """Draws discrete damping and frequency grid. If ax 
+    is not specified, the current figure axis is used.
 
     Parameters
     ----------
@@ -206,9 +220,9 @@ def zgrid(ax=None, zetas=None, wns=None):
     >>> plt.show()
     """
 
+    fig = plt.gcf()
     if ax is None:
-        # Get the current axis or create a new figure with one
-        ax = plt.gca()
+        ax = fig.gca()
 
     # Constant damping lines
     if zetas is None:
@@ -222,11 +236,11 @@ def zgrid(ax=None, zetas=None, wns=None):
         # Draw upper part in rectangular coordinates
         xret = mag*cos(ang)
         yret = mag*sin(ang)
-        ax.plot(xret, yret, 'k:', lw=1)
-        # Draw lower part in rectangular coordinates
+        ax.plot(xret, yret, ':', color='grey', lw=0.75)
+        # Draw lower part in retangular coordinates
         xret = mag*cos(-ang)
         yret = mag*sin(-ang)
-        ax.plot(xret, yret, 'k:', lw=1)
+        ax.plot(xret, yret, ':', color='grey', lw=0.75)
         # Annotation
         an_i = int(len(xret)/2.5)
         an_x = xret[an_i]
@@ -245,14 +259,14 @@ def zgrid(ax=None, zetas=None, wns=None):
         # Draw in rectangular coordinates
         xret = mag*cos(ang)
         yret = mag*sin(ang)
-        ax.plot(xret, yret, 'k:', lw=1)
+        ax.plot(xret, yret, ':', color='grey', lw=0.75)
         # Annotation
         an_i = -1
         an_x = xret[an_i]
         an_y = yret[an_i]
         num = '{:1.1f}'.format(a)
-        ax.annotate("$\\frac{" + num + "\\pi}{T}$", xy=(an_x, an_y),
+        ax.annotate(r"$\frac{"+num+r"\pi}{T}$", xy=(an_x, an_y),
                     xytext=(an_x, an_y), size=9)
 
     _final_setup(ax)
-    return ax
+    return ax, fig

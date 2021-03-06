@@ -15,18 +15,29 @@ these directly.
 
    TransferFunction
    StateSpace
-   FRD
+   FrequencyResponseData
    InputOutputSystem
 
-Input/Output system subclasses
+Input/output system subclasses
 ==============================
-
 Input/output systems are accessed primarily via a set of subclasses
 that allow for linear, nonlinear, and interconnected elements:
 
 .. autosummary::
    :toctree: generated/
 
+   InterconnectedSystem
+   LinearICSystem
    LinearIOSystem
    NonlinearIOSystem
-   InterconnectedSystem
+
+Additional classes
+==================
+.. autosummary::
+
+   flatsys.BasisFamily
+   flatsys.FlatSystem
+   flatsys.LinearFlatSystem
+   flatsys.PolyFamily
+   flatsys.SystemTrajectory
+   optimal.OptimalControlProblem

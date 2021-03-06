@@ -62,8 +62,8 @@ function.  A full list of functions can be found in :ref:`function-ref`.
 
 FRD (frequency response data) systems
 -------------------------------------
-The :class:`FRD` class is used to represent systems in frequency response
-data form.
+The :class:`FrequencyResponseData` (FRD) class is used to represent systems in
+frequency response data form.
 
 The main data members are `omega` and `fresp`, where `omega` is a 1D array
 with the frequency points of the response, and `fresp` is a 3D array, with
@@ -80,25 +80,24 @@ Discrete time systems
 A discrete time system is created by specifying a nonzero 'timebase', dt.
 The timebase argument can be given when a system is constructed:
 
-* dt = None: no timebase specified (default)
-* dt = 0: continuous time system
+* dt = 0: continuous time system (default)
 * dt > 0: discrete time system with sampling period 'dt'
 * dt = True: discrete time with unspecified sampling period
+* dt = None: no timebase specified 
 
 Only the :class:`StateSpace`, :class:`TransferFunction`, and
 :class:`InputOutputSystem` classes allow explicit representation of
 discrete time systems.
 
-Systems must have compatible timebases in order to be combined.  A system
-with timebase `None` can be combined with a system having a specified
-timebase; the result will have the timebase of the latter system.
-Similarly, a discrete time system with unspecified sampling time (`dt =
-True`) can be combined with a system having a specified sampling time;
-the result will be a discrete time system with the sample time of the latter
-system.  For continuous time systems, the :func:`sample_system` function or
-the :meth:`StateSpace.sample` and :meth:`TransferFunction.sample` methods
+Systems must have compatible timebases in order to be combined. A discrete time 
+system with unspecified sampling time (`dt = True`) can be combined with a system 
+having a specified sampling time; the result will be a discrete time system with the sample time of the latter
+system.  Similarly, a system with timebase `None` can be combined with a system having a specified
+timebase; the result will have the timebase of the latter system. For continuous 
+time systems, the :func:`sample_system` function or the :meth:`StateSpace.sample` and :meth:`TransferFunction.sample` methods
 can be used to create a discrete time system from a continuous time system.
-See :ref:`utility-and-conversions`.
+See :ref:`utility-and-conversions`. The default value of 'dt' can be changed by
+changing the value of ``control.config.defaults['control.default_dt']``.
 
 Conversion between representations
 ----------------------------------
@@ -106,13 +105,6 @@ LTI systems can be converted between representations either by calling the
 constructor for the desired data type using the original system as the sole
 argument or using the explicit conversion functions :func:`ss2tf` and
 :func:`tf2ss`.
-
-Input/output systems
-====================
-
-.. automodule:: control.iosys
-   :no-members:
-   :no-inherited-members:
 
 .. currentmodule:: control
 .. _time-series-convention:
@@ -187,23 +179,56 @@ can be computed like this::
 
     ft = D * U
 
-Package configuration
-=====================
+Package configuration parameters
+================================
 
-The python-control library can be customized to allow for different plotting
-conventions.  The currently configurable options allow the units for Bode
-plots to be set as dB for gain, degrees for phase and Hertz for frequency
-(MATLAB conventions) or the gain can be given in magnitude units (powers of
-10), corresponding to the conventions used in `Feedback Systems
-<http://fbsbook.org>`_ (FBS).
+The python-control library can be customized to allow for different default
+values for selected parameters.  This includes the ability to set the style
+for various types of plots and establishing the underlying representation for
+state space matrices.
 
-Variables that can be configured, along with their default values:
-  * bode_dB (False): Bode plot magnitude plotted in dB (otherwise powers of 10)
-  * bode_deg (True): Bode plot phase plotted in degrees (otherwise radians)
-  * bode_Hz (False): Bode plot frequency plotted in Hertz (otherwise rad/sec)
-  * bode_number_of_samples (None): Number of frequency points in Bode plots
-  * bode_feature_periphery_decade (1.0): How many decades to include in the
-    frequency range on both sides of features (poles, zeros). 
+To set the default value of a configuration variable, set the appropriate
+element of the `control.config.defaults` dictionary:
+
+.. code-block:: python
+
+    control.config.defaults['module.parameter'] = value
+
+The `~control.config.set_defaults` function can also be used to set multiple
+configuration parameters at the same time:
+
+.. code-block:: python
+
+    control.config.set_defaults('module', param1=val1, param2=val2, ...]
+
+Finally, there are also functions available set collections of variables based
+on standard configurations.
+
+Selected variables that can be configured, along with their default values:
+
+  * bode.dB (False): Bode plot magnitude plotted in dB (otherwise powers of 10)
+    
+  * bode.deg (True): Bode plot phase plotted in degrees (otherwise radians)
+    
+  * bode.Hz (False): Bode plot frequency plotted in Hertz (otherwise rad/sec)
+    
+  * bode.grid (True): Include grids for magnitude and phase plots
+    
+  * freqplot.number_of_samples (None): Number of frequency points in Bode plots
+    
+  * freqplot.feature_periphery_decade (1.0): How many decades to include in the
+    frequency range on both sides of features (poles, zeros).
+    
+  * statesp.use_numpy_matrix (True): set the return type for state space matrices to
+    `numpy.matrix` (verus numpy.ndarray)
+
+  * statesp.default_dt and xferfcn.default_dt (None): set the default value of dt when 
+    constructing new LTI systems
+
+  * statesp.remove_useless_states (True): remove states that have no effect on the 
+    input-output dynamics of the system
+
+Additional parameter variables are documented in individual functions
 
 Functions that can be used to set standard configurations:
 
@@ -214,3 +239,4 @@ Functions that can be used to set standard configurations:
     use_fbs_defaults
     use_matlab_defaults
     use_numpy_matrix
+    use_legacy_defaults

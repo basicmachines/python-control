@@ -70,7 +70,7 @@ from ..exception import ControlArgument
 
 # Import MATLAB-like functions that can be used as-is
 from ..ctrlutil import *
-from ..freqplot import nyquist, gangof4
+from ..freqplot import gangof4
 from ..nichols import nichols
 from ..bdalg import *
 from ..pzmap import *
@@ -86,6 +86,10 @@ from ..sisotool import sisotool
 # Import functions specific to Matlab compatibility package
 from .timeresp import *
 from .wrappers import *
+
+# Set up defaults corresponding to MATLAB conventions
+from ..config import *
+use_matlab_defaults()
 
 r"""
 The following tables give an overview of the module ``control.matlab``.
@@ -220,8 +224,8 @@ Frequency-domain analysis
 \*  :func:`~control.nichols`    Nichols plot
 \*  :func:`margin`              gain and phase margins
 \   lti/allmargin               all crossover frequencies and margins
-\*  :func:`freqresp`            frequency response over a frequency grid
-\*  :func:`evalfr`              frequency response at single frequency
+\*  :func:`freqresp`            frequency response
+\*  :func:`evalfr`              frequency response at complex frequency s
 ==  ==========================  ============================================
 
 

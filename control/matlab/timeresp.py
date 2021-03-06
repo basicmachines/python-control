@@ -21,8 +21,9 @@ def step(sys, T=None, X0=0., input=0, output=None, return_x=False):
     sys: StateSpace, or TransferFunction
         LTI system to simulate
 
-    T: array-like object, optional
-        Time vector (argument is autocomputed if not given)
+    T: array-like or number, optional
+        Time vector, or simulation time duration if a number (time vector is
+        autocomputed if not given)
 
     X0: array-like or number, optional
         Initial condition (default = 0)
@@ -58,15 +59,13 @@ def step(sys, T=None, X0=0., input=0, output=None, return_x=False):
     '''
     from ..timeresp import step_response
 
-    T, yout, xout = step_response(sys, T, X0, input, output,
-                                  transpose = True, return_x=True)
+    # Switch output argument order and transpose outputs
+    out = step_response(sys, T, X0, input, output,
+                        transpose=True, return_x=return_x)
+    return (out[1], out[0], out[2]) if return_x else (out[1], out[0])
 
-    if return_x:
-        return yout, T, xout
-
-    return yout, T
-
-def stepinfo(sys, T=None, SettlingTimeThreshold=0.02, RiseTimeLimits=(0.1,0.9)):
+def stepinfo(sys, T=None, SettlingTimeThreshold=0.02,
+             RiseTimeLimits=(0.1, 0.9)):
     '''
     Step response characteristics (Rise time, Settling Time, Peak and others).
 
@@ -75,8 +74,9 @@ def stepinfo(sys, T=None, SettlingTimeThreshold=0.02, RiseTimeLimits=(0.1,0.9)):
     sys: StateSpace, or TransferFunction
         LTI system to simulate
 
-    T: array-like object, optional
-        Time vector (argument is autocomputed if not given)
+    T: array-like or number, optional
+        Time vector, or simulation time duration if a number (time vector is
+        autocomputed if not given)
 
     SettlingTimeThreshold: float value, optional
         Defines the error to compute settling time (default = 0.02)
@@ -108,7 +108,8 @@ def stepinfo(sys, T=None, SettlingTimeThreshold=0.02, RiseTimeLimits=(0.1,0.9)):
     '''
     from ..timeresp import step_info
 
-    S = step_info(sys, T, SettlingTimeThreshold, RiseTimeLimits)
+    # Call step_info with MATLAB defaults
+    S = step_info(sys, T, None, SettlingTimeThreshold, RiseTimeLimits)
 
     return S
 
@@ -127,8 +128,9 @@ def impulse(sys, T=None, X0=0., input=0, output=None, return_x=False):
     sys: StateSpace, TransferFunction
         LTI system to simulate
 
-    T: array-like object, optional
-        Time vector (argument is autocomputed if not given)
+    T: array-like or number, optional
+        Time vector, or simulation time duration if a number (time vector is
+        autocomputed if not given)
 
     X0: array-like or number, optional
         Initial condition (default = 0)
@@ -161,13 +163,11 @@ def impulse(sys, T=None, X0=0., input=0, output=None, return_x=False):
     >>> yout, T = impulse(sys, T)
     '''
     from ..timeresp import impulse_response
-    T, yout, xout = impulse_response(sys, T, X0, input, output,
-                                     transpose = True, return_x=True)
 
-    if return_x:
-        return yout, T, xout
-
-    return yout, T
+    # Switch output argument order and transpose outputs
+    out = impulse_response(sys, T, X0, input, output,
+                           transpose = True, return_x=return_x)
+    return (out[1], out[0], out[2]) if return_x else (out[1], out[0])
 
 def initial(sys, T=None, X0=0., input=None, output=None, return_x=False):
     '''
@@ -182,8 +182,9 @@ def initial(sys, T=None, X0=0., input=None, output=None, return_x=False):
     sys: StateSpace, or TransferFunction
         LTI system to simulate
 
-    T: array-like object, optional
-        Time vector (argument is autocomputed if not given)
+    T: array-like or number, optional
+        Time vector, or simulation time duration if a number (time vector is
+        autocomputed if not given)
 
     X0: array-like object or number, optional
         Initial condition (default = 0)
@@ -218,13 +219,12 @@ def initial(sys, T=None, X0=0., input=None, output=None, return_x=False):
 
     '''
     from ..timeresp import initial_response
+
+    # Switch output argument order and transpose outputs
     T, yout, xout = initial_response(sys, T, X0, output=output,
                                      transpose=True, return_x=True)
+    return (yout, T, xout) if return_x else (yout, T)
 
-    if return_x:
-        return yout, T, xout
-
-    return yout, T
 
 def lsim(sys, U=0., T=None, X0=0.):
     '''
@@ -245,9 +245,8 @@ def lsim(sys, U=0., T=None, X0=0.):
         If `U` is ``None`` or ``0``, a special algorithm is used. This special
         algorithm is faster than the general algorithm, which is used otherwise.
 
-    T: array-like
-        Time steps at which the input is defined, numbers must be (strictly
-        monotonic) increasing.
+    T: array-like, optional for discrete LTI `sys`
+        Time steps at which the input is defined; values must be evenly spaced.
 
     X0: array-like or number, optional
         Initial condition (default = 0).
@@ -270,5 +269,7 @@ def lsim(sys, U=0., T=None, X0=0.):
     >>> yout, T, xout = lsim(sys, U, T, X0)
     '''
     from ..timeresp import forced_response
-    T, yout, xout = forced_response(sys, T, U, X0, transpose = True)
-    return yout, T, xout
+
+    # Switch output argument order and transpose outputs (and always return x)
+    out = forced_response(sys, T, U, X0, return_x=True, transpose=True)
+    return out[1], out[0], out[2]

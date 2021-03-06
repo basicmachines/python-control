@@ -1,37 +1,80 @@
-import unittest
+"""sisotool_test.py"""
+
+from control.exception import ControlMIMONotImplemented
+import matplotlib.pyplot as plt
 import numpy as np
+from numpy.testing import assert_array_almost_equal
+import pytest
+
 from control.sisotool import sisotool
-from control.tests.margin_test import assert_array_almost_equal
 from control.rlocus import _RLClickDispatcher
 from control.xferfcn import TransferFunction
+from control.statesp import StateSpace
 
 
-class TestSisotool(unittest.TestCase):
+@pytest.mark.usefixtures("mplcleanup")
+class TestSisotool:
     """These are tests for the sisotool in sisotool.py."""
 
-    def setUp(self):
-        # One random SISO system.
-        self.system = TransferFunction([1000], [1, 25, 100, 0])
+    @pytest.fixture
+    def sys(self):
+        """Return a generic SISO transfer function"""
+        return TransferFunction([1000], [1, 25, 100, 0])
 
-    def test_sisotool(self):
-        fig = sisotool(self.system, Hz=False)
-        ax_mag, ax_rlocus, ax_phase, ax_step = fig.axes
+    @pytest.fixture
+    def sysdt(self):
+        """Return a generic SISO transfer function"""
+        return TransferFunction([1000], [1, 25, 100, 0], True)
+
+    @pytest.fixture
+    def sys222(self):
+        """2-states square system (2 inputs x 2 outputs)"""
+        A222 = [[4., 1.],
+                [2., -3]]
+        B222 = [[5., 2.],
+                [-3., -3.]]
+        C222 = [[2., -4],
+                [0., 1.]]
+        D222 = [[3., 2.],
+                [1., -1.]]
+        return StateSpace(A222, B222, C222, D222)
+
+    @pytest.fixture
+    def sys221(self):
+        """2-states, 2 inputs x 1 output"""
+        A222 = [[4., 1.],
+                [2., -3]]
+        B222 = [[5., 2.],
+                [-3., -3.]]
+        C221 = [[0., 1.]]
+        D221 = [[1., -1.]]
+        return StateSpace(A222, B222, C221, D221)
+
+    def test_sisotool(self, sys):
+        sisotool(sys, Hz=False)
+        fig = plt.gcf()
+        ax_mag, ax_rlocus, ax_phase, ax_step = fig.axes[:4]
 
         # Check the initial root locus plot points
         initial_point_0 = (np.array([-22.53155977]), np.array([0.]))
         initial_point_1 = (np.array([-1.23422011]), np.array([-6.54667031]))
-        initial_point_2 = (np.array([-1.23422011]), np.array([06.54667031]))
-        assert_array_almost_equal(ax_rlocus.lines[0].get_data(), initial_point_0)
-        assert_array_almost_equal(ax_rlocus.lines[1].get_data(), initial_point_1)
-        assert_array_almost_equal(ax_rlocus.lines[2].get_data(), initial_point_2)
+        initial_point_2 = (np.array([-1.23422011]), np.array([6.54667031]))
+        assert_array_almost_equal(ax_rlocus.lines[0].get_data(),
+                                  initial_point_0, 4)
+        assert_array_almost_equal(ax_rlocus.lines[1].get_data(),
+                                  initial_point_1, 4)
+        assert_array_almost_equal(ax_rlocus.lines[2].get_data(),
+                                  initial_point_2, 4)
 
         # Check the step response before moving the point
+        # new array needed because change in compute step response default time
         step_response_original = np.array(
-            [0.,         0.02233651,  0.13118374,  0.33078542,  0.5907113,
-             0.87041549, 1.13038536,  1.33851053,  1.47374666,  1.52757114]
-        )
-        assert_array_almost_equal(ax_step.lines[0].get_data()[1][:10],
-                                  step_response_original)
+            [0.    , 0.0069, 0.0448, 0.124 , 0.2427, 0.3933, 0.5653, 0.7473,
+             0.928 , 1.0969])
+        #old: np.array([0., 0.0217, 0.1281, 0.3237, 0.5797, 0.8566, 1.116,
+            # 1.3261, 1.4659, 1.526])
+        assert_array_almost_equal(
+            ax_step.lines[0].get_data()[1][:10], step_response_original, 4)
 
         bode_plot_params = {
             'omega': None,
@@ -45,10 +88,11 @@ class TestSisotool(unittest.TestCase):
             'margins': True
         }
 
-        # Move the root locus to another point
-        event = type('test', (object,), {'xdata': 2.31206868287, 'ydata': 15.5983051046,
+        # Move the rootlocus to another point
+        event = type('test', (object,), {'xdata': 2.31206868287,
+                                         'ydata': 15.5983051046,
                                          'inaxes': ax_rlocus.axes})()
-        _RLClickDispatcher(event=event, sys=self.system, fig=fig,
+        _RLClickDispatcher(event=event, sys=sys, fig=fig,
                            ax_rlocus=ax_rlocus, sisotool=True, plotstr='-',
                            bode_plot_params=bode_plot_params, tvect=None)
 
@@ -56,29 +100,64 @@ class TestSisotool(unittest.TestCase):
         moved_point_0 = (np.array([-29.91742755]), np.array([0.]))
         moved_point_1 = (np.array([2.45871378]), np.array([-15.52647768]))
         moved_point_2 = (np.array([2.45871378]), np.array([15.52647768]))
-        assert_array_almost_equal(ax_rlocus.lines[-3].get_data(), moved_point_0)
-        assert_array_almost_equal(ax_rlocus.lines[-2].get_data(), moved_point_1)
-        assert_array_almost_equal(ax_rlocus.lines[-1].get_data(), moved_point_2)
+        assert_array_almost_equal(ax_rlocus.lines[-3].get_data(),
+                                  moved_point_0, 4)
+        assert_array_almost_equal(ax_rlocus.lines[-2].get_data(),
+                                  moved_point_1, 4)
+        assert_array_almost_equal(ax_rlocus.lines[-1].get_data(),
+                                  moved_point_2, 4)
 
         # Check if the bode_mag line has moved
         bode_mag_moved = np.array(
-            [111.83321224,   92.29238035,   76.02822315,   62.46884113,
-              51.14108703,    41.6554004,   33.69409534,   27.00237344,
-              21.38086717,   16.67791585]
-        )
-        assert_array_almost_equal(ax_mag.lines[0].get_data()[1][10:20], bode_mag_moved)
+            [674.0242, 667.8354, 661.7033, 655.6275, 649.6074, 643.6426,
+              637.7324, 631.8765, 626.0742, 620.3252])
+        assert_array_almost_equal(ax_mag.lines[0].get_data()[1][10:20],
+                                  bode_mag_moved, 4)
 
         # Check if the step response has changed
-        step_response_moved = np.array([
-            [0.,          0.02458187,  0.16529784,  0.46602716,  0.91012035,  1.43364313,
-             1.93996334,  2.3190105 ,  2.47041552,  2.32724853]
-        ])
-        assert_array_almost_equal(ax_step.lines[0].get_data()[1][:10], step_response_moved)
+        # new array needed because change in compute step response default time
+        step_response_moved = np.array(
+            [0., 0.0072, 0.0516, 0.1554, 0.3281, 0.5681, 0.8646, 1.1987,
+             1.5452, 1.875])
+        assert_array_almost_equal(
+            ax_step.lines[0].get_data()[1][:10], step_response_moved, 4)
 
+    def test_sisotool_tvect(self, sys):
+        # test supply tvect
+        tvect = np.linspace(0, 1, 10)
+        sisotool(sys, tvect=tvect)
+        fig = plt.gcf()
+        ax_rlocus, ax_step = fig.axes[1], fig.axes[3]
 
-def test_suite():
-    return unittest.TestLoader().loadTestsFromTestCase(TestSisotool)
+        # Move the rootlocus to another point and confirm same tvect
+        event = type('test', (object,), {'xdata': 2.31206868287,
+                                         'ydata': 15.5983051046,
+                                         'inaxes': ax_rlocus.axes})()
+        _RLClickDispatcher(event=event, sys=sys, fig=fig,
+                           ax_rlocus=ax_rlocus, sisotool=True, plotstr='-',
+                           bode_plot_params=dict(), tvect=tvect)
+        assert_array_almost_equal(tvect, ax_step.lines[0].get_data()[0])
 
+    def test_sisotool_tvect_dt(self, sysdt):
+        # test supply tvect
+        tvect = np.linspace(0, 1, 10)
+        sisotool(sysdt, tvect=tvect)
+        fig = plt.gcf()
+        ax_rlocus, ax_step = fig.axes[1], fig.axes[3]
 
-if __name__ == "__main__":
-    unittest.main()
+        # Move the rootlocus to another point and confirm same tvect
+        event = type('test', (object,), {'xdata': 2.31206868287,
+                                         'ydata': 15.5983051046,
+                                         'inaxes': ax_rlocus.axes})()
+        _RLClickDispatcher(event=event, sys=sysdt, fig=fig,
+                           ax_rlocus=ax_rlocus, sisotool=True, plotstr='-',
+                           bode_plot_params=dict(), tvect=tvect)
+        assert_array_almost_equal(tvect, ax_step.lines[0].get_data()[0])
+
+    def test_sisotool_mimo(self,  sys222, sys221):
+        # a 2x2 should not raise an error:
+        sisotool(sys222)
+
+        # but 2 input, 1 output should
+        with pytest.raises(ControlMIMONotImplemented):
+            sisotool(sys221)
