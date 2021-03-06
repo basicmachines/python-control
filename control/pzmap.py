@@ -39,9 +39,8 @@
 # SUCH DAMAGE.
 #
 
-from numpy import real, imag, linspace, exp, cos, sin, sqrt
-from math import pi
-from .lti import LTI, isdtime, isctime
+from numpy import real, imag
+from .lti import LTI, isdtime
 from .grid import sgrid, zgrid, nogrid
 from . import config
 
@@ -69,6 +68,8 @@ def pzmap(sys, plot=None, grid=None, title='Pole Zero Map', **kwargs):
     plot: bool, optional
         If ``True`` a graph is generated with Matplotlib,
         otherwise the poles and zeros are only computed and returned.
+    ax : matplotlib axis object
+        If not passed, uses gca() to get current axis.
     grid: boolean (default = False)
         If True plot omega-damping grid.
 
@@ -78,6 +79,13 @@ def pzmap(sys, plot=None, grid=None, title='Pole Zero Map', **kwargs):
         The systems poles
     zeros: array
         The system's zeros.
+
+    Example
+    -------
+    >>> H = tf([2, 5, 1], [1, 3, 5])
+    >>> p, z = pzmap(H)
+    >>> plt.grid()
+    >>> plt.show()
     """
     # Check to see if legacy 'Plot' keyword was used
     if 'Plot' in kwargs:
@@ -99,13 +107,17 @@ def pzmap(sys, plot=None, grid=None, title='Pole Zero Map', **kwargs):
     if (plot):
         import matplotlib.pyplot as plt
 
+        if ax is None:
+            # Get the current axis or create a new figure with one
+            ax = plt.gca()
+
         if grid:
             if isdtime(sys, strict=True):
-                ax, fig = zgrid()
+                ax = zgrid(ax=ax)
             else:
-                ax, fig = sgrid()
+                ax = sgrid(ax=ax)
         else:
-            ax, fig = nogrid()
+            ax = nogrid(ax=ax)
 
         # Plot the locations of the poles and zeros
         if len(poles) > 0:
@@ -115,7 +127,7 @@ def pzmap(sys, plot=None, grid=None, title='Pole Zero Map', **kwargs):
             ax.scatter(real(zeros), imag(zeros), s=50, marker='o',
                        facecolors='none', edgecolors='k')
 
-        plt.title(title)
+        ax.set_title(title)
 
     # Return locations of poles and zeros as a tuple
     return poles, zeros

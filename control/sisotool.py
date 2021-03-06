@@ -15,11 +15,11 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
              Hz=None, deg=None, omega_limits=None, omega_num=None,
              margins_bode=True, tvect=None):
     """
-    Sisotool style collection of plots inspired by MATLAB's sisotool.
+    Displays a figure with four plots similar to MATLAB's sisotool.
     The left two plots contain the bode magnitude and phase diagrams.
-    The top right plot is a clickable root locus plot, clicking on the
-    root locus will change the gain of the system. The bottom left plot
-    shows a closed loop time response.
+    The top-right plot is a clickable root locus plot. Clicking on the
+    root locus will change the gain of the system. The bottom-right plot
+    shows a closed-loop time response.
 
     Parameters
     ----------
@@ -65,6 +65,10 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
     tvect : list or ndarray, optional
         List of timesteps to use for closed loop step response
 
+    Returns
+    -------
+    fig : matplotlib figure
+
     Examples
     --------
     >>> sys = tf([1000], [1,25,100,0])
@@ -81,10 +85,10 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
 
     # Setup sisotool figure or superimpose if one is already present
     fig = plt.gcf()
-    if fig.canvas.get_window_title() != 'Sisotool':
-        plt.close(fig)
-        fig,axes = plt.subplots(2, 2)
-        fig.canvas.set_window_title('Sisotool')
+    #if fig.canvas.get_window_title() != 'Sisotool':
+    plt.close(fig)
+    fig, axes = plt.subplots(2, 2)
+    fig.canvas.set_window_title('Sisotool')
 
     # Extract bode plot parameters
     bode_plot_params = {
@@ -93,7 +97,7 @@ def sisotool(sys, kvect=None, xlim_rlocus=None, ylim_rlocus=None,
         'Hz': Hz,
         'deg': deg,
         'omega_limits': omega_limits,
-        'omega_num' : omega_num,
+        'omega_num': omega_num,
         'sisotool': True,
         'fig': fig,
         'margins': margins_bode
@@ -117,7 +121,7 @@ def _SisotoolUpdate(sys, fig, K, bode_plot_params, tvect=None):
     ax_mag, ax_rlocus, ax_phase, ax_step = \
         fig.axes[0], fig.axes[1], fig.axes[2], fig.axes[3]
 
-    # Catch matplotlib 2.1.x and higher userwarnings when clearing a log axis
+    # Catch matplotlib 2.1.x and higher user warnings when clearing a log axis
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         ax_step.clear(), ax_mag.clear(), ax_phase.clear()
@@ -129,25 +133,25 @@ def _SisotoolUpdate(sys, fig, K, bode_plot_params, tvect=None):
     bode_plot(**bode_plot_params)
 
     # Set the titles and labels
-    ax_mag.set_title('Bode magnitude',fontsize = title_font_size)
+    ax_mag.set_title('Bode magnitude', fontsize=title_font_size)
     ax_mag.set_ylabel(ax_mag.get_ylabel(), fontsize=label_font_size)
     ax_mag.tick_params(axis='both', which='major', labelsize=label_font_size)
 
-    ax_phase.set_title('Bode phase',fontsize=title_font_size)
-    ax_phase.set_xlabel(ax_phase.get_xlabel(),fontsize=label_font_size)
-    ax_phase.set_ylabel(ax_phase.get_ylabel(),fontsize=label_font_size)
+    ax_phase.set_title('Bode phase', fontsize=title_font_size)
+    ax_phase.set_xlabel(ax_phase.get_xlabel(), fontsize=label_font_size)
+    ax_phase.set_ylabel(ax_phase.get_ylabel(), fontsize=label_font_size)
     ax_phase.get_xaxis().set_label_coords(0.5, -0.15)
     ax_phase.get_shared_x_axes().join(ax_phase, ax_mag)
     ax_phase.tick_params(axis='both', which='major', labelsize=label_font_size)
 
-    ax_step.set_title('Step response',fontsize = title_font_size)
-    ax_step.set_xlabel('Time (seconds)',fontsize=label_font_size)
-    ax_step.set_ylabel('Output',fontsize=label_font_size)
+    ax_step.set_title('Step response', fontsize = title_font_size)
+    ax_step.set_xlabel('Time (seconds)', fontsize=label_font_size)
+    ax_step.set_ylabel('Output', fontsize=label_font_size)
     ax_step.get_xaxis().set_label_coords(0.5, -0.15)
     ax_step.get_yaxis().set_label_coords(-0.15, 0.5)
     ax_step.tick_params(axis='both', which='major', labelsize=label_font_size)
 
-    ax_rlocus.set_title('Root locus',fontsize = title_font_size)
+    ax_rlocus.set_title('Root locus', fontsize=title_font_size)
     ax_rlocus.set_ylabel('Imag', fontsize=label_font_size)
     ax_rlocus.set_xlabel('Real', fontsize=label_font_size)
     ax_rlocus.get_xaxis().set_label_coords(0.5, -0.15)
@@ -173,6 +177,5 @@ def _SisotoolUpdate(sys, fig, K, bode_plot_params, tvect=None):
     ax_step.axhline(1.,linestyle=':',color='k',zorder=-20)
 
     # Manually adjust the spacing and draw the canvas
-    fig.subplots_adjust(top=0.9,wspace = 0.3,hspace=0.35)
+    fig.subplots_adjust(top=0.9, wspace=0.3, hspace=0.35)
     fig.canvas.draw()
-

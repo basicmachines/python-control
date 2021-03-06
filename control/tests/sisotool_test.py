@@ -161,7 +161,3 @@ class TestSisotool:
         # but 2 input, 1 output should
         with pytest.raises(ControlMIMONotImplemented):
             sisotool(sys221)
-
-
-
-

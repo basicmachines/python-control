@@ -96,4 +96,3 @@ class TestRootLocus:
             [-1e-2, 1-1e7j, 1+1e7j], [0, -1e7j, 1e7j], 1))
 
         ct.root_locus(sys)
-
